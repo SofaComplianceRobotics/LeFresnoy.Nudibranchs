@@ -1,5 +1,7 @@
 # Le Fresnoy Nudibranchs Project
 
+![](image/nudibranch.jpg)
+
 ## Requirements
 
 - **OS** minimum: Windows 10, Ubuntu 22.04, MacOS 12
