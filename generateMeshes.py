@@ -1,14 +1,20 @@
 
+# Units are mm, kg, s
+import parameters as params
+
 def generateMeshes(modelling):
     """
     Generates the volume mesh of the body
     """
+
+    # We load the meshes, the body surface and cavities wall
     meshbody = modelling.addObject("MeshSTLLoader", name="meshbody", filename="mesh/body.stl")
     meshbodycavity = modelling.addObject("MeshSTLLoader", name="meshbodycavity", filename="mesh/bodycavity.stl")
-    meshheadcavity1 = modelling.addObject("MeshSTLLoader", name="meshheadcavity1", filename="mesh/headcavity1.stl")
-    meshheadcavity2 = modelling.addObject("MeshSTLLoader", name="meshheadcavity2", filename="mesh/headcavity2.stl")
-    meshheadcavity3 = modelling.addObject("MeshSTLLoader", name="meshheadcavity3", filename="mesh/headcavity3.stl")
+    meshheadcavity1 = modelling.addObject("MeshSTLLoader", name="meshheadcavity1", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[0])
+    meshheadcavity2 = modelling.addObject("MeshSTLLoader", name="meshheadcavity2", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[1])
+    meshheadcavity3 = modelling.addObject("MeshSTLLoader", name="meshheadcavity3", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[2])
 
+    # We create a node for each part
     bodysurface = modelling.addChild("BodySurface")
     bodysurface.addObject("MeshTopology", src=meshbody.linkpath)
 
@@ -22,6 +28,7 @@ def generateMeshes(modelling):
                                   meshheadcavity2,
                                   meshheadcavity3][i].linkpath)
 
+    # We compute the difference between the body and the first cavity
     meshbodydifference = modelling.addChild("MeshBodyDifference")
     meshbodydifference.addObject("BooleanOperations", name="operation0", operation="difference",
                                  position1=meshbody.position.linkpath,
@@ -29,6 +36,8 @@ def generateMeshes(modelling):
                                  position2=meshbodycavity.position.linkpath,
                                  triangles2=meshbodycavity.triangles.linkpath
                                  )
+
+    # We continue with the difference between the result and the next cavity
     for i in range(3):
         meshbodydifference.addObject("BooleanOperations", name="operation" + str(i + 1), operation="difference",
                                      position1="@operation" + str(i) + ".outputPosition",
@@ -43,33 +52,34 @@ def generateMeshes(modelling):
     meshbodydifference.addObject("MeshTopology",
                                  position="@operation3.outputPosition",
                                  triangles="@operation3.outputTriangles")
-    meshbodydifference.addObject("OglModel")
 
+    # Once we have the mesh of the body cut of its cavities, we generate the volume mesh
     bodyvolume = modelling.addChild("BodyVolume")
     bodyvolume.addObject("MeshGenerationFromPolyhedron",
                          inputPoints=meshbodydifference.MeshTopology.position.linkpath,
                          inputTriangles=meshbodydifference.MeshTopology.triangles.linkpath,
-                         drawTetras=False,
+                         drawTetras=True,
                          facetSize=15,
-                         facetApproximation=9,
+                         facetApproximation=4 if params.COARSE else 2,
                          cellRatio=2,
                          cellSize=15,
                          facetAngle=30)
-    bodyvolume.addObject("MeshTopology",
+    bodyvolume.addObject("MeshTopology", name="topology",
                          position="@MeshGenerationFromPolyhedron.outputPoints",
                          tetrahedra="@MeshGenerationFromPolyhedron.outputTetras")
 
-    # TODO : export the generated meshes
+    # We export the generated mesh
+    bodyvolume.addObject("VTKExporter", filename="mesh/body",
+                         position=bodyvolume.topology.position.linkpath,
+                         edges=False, tetras=True, hexas=True,
+                         exportAtEnd=True)
 
     return bodyvolume
 
 
 def createScene(rootnode):
-    from header import addHeader, addSolvers
-    from scene import addRobot
-    from splib3.animation import AnimationManager, animate
+    from header import addHeader
 
-    rootnode.addObject(AnimationManager(rootnode))
     settings, modelling, simulation = addHeader(rootnode)
 
     settings.addObject("RequiredPlugin", name="CGALPlugin")
@@ -77,23 +87,7 @@ def createScene(rootnode):
     settings.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Constant')  # Needed to use components [MeshTopology]
     settings.addObject('RequiredPlugin', name='Sofa.GL.Component.Rendering3D')  # Needed to use components [OglModel]
 
-    rootnode.addObject("VisualStyle", displayFlags=["hideWireframe", "hideVisual", "showBehaviorModels", "showForceFields"])
-    rootnode.gravity.value = [0, -9810, 0]
-    # rootnode.addObject("ClipPlane", position=[250, 0, 0])
+    rootnode.VisualStyle.displayFlags=["showVisual", "showBehaviorModels"]
+    rootnode.gravity.value = [0, 0, -9810]
 
     generateMeshes(modelling)
-    addSolvers(simulation)
-    robot = addRobot(simulation, modelling)
-    robot.addObject("BoxROI", box=[0, 0, 0, 150, 10, 100])
-    robot.addObject("FixedProjectiveConstraint", indices=robot.BoxROI.indices.linkpath, drawSize=1)
-
-    def pressureAnimation(target, factor, pressure, startTime):
-        from math import sin, pi
-        if factor > 0:
-            target.value.value = [sin(2 * pi * factor) * pressure]
-
-    animate(pressureAnimation, {'target': robot.BodyCavity.SurfacePressureConstraint, 'pressure':0.5, 'startTime':0}, duration=2, mode="loop")
-    animate(pressureAnimation, {'target': robot.HeadCavity1.SurfacePressureConstraint, 'pressure':1, 'startTime':0}, duration=2, mode="loop", terminationDelay=6)
-    animate(pressureAnimation, {'target': robot.HeadCavity2.SurfacePressureConstraint, 'pressure':1, 'startTime':2}, duration=2, mode="loop", terminationDelay=6)
-    animate(pressureAnimation, {'target': robot.HeadCavity3.SurfacePressureConstraint, 'pressure':1, 'startTime':4}, duration=2, mode="loop", terminationDelay=6)
-
