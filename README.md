@@ -14,6 +14,10 @@ From _github.com/sofa-framework_:
 - [SofaPython3](https://github.com/sofa-framework/SofaPython3) 
 - [CGALPlugin](https://github.com/sofa-framework/CGALPlugin)
   
+From _github.com/SofaComplianceRobotics_:
+- [SofaGLFW](https://github.com/SofaComplianceRobotics/SofaGLFW/tree/robotics) on the robotics branch
+- SofaImGui (distributed with SofaGLFW)
+
 From _github.com/SofaDefrost_:
 - [SoftRobots](https://github.com/SofaDefrost/SoftRobots) 
 - [SoftRobots.Inverse](https://github.com/SofaDefrost/SoftRobots.Inverse)

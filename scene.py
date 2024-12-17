@@ -1,5 +1,6 @@
 from math import pi, sin, cos
 import parameters as params
+import Sofa.ImGui as MyGui
 
 
 # Units are mm, kg, s
@@ -15,7 +16,7 @@ def addRobot(simulation, modelling, meshGeneration=True):
     if not params.COARSE:
         visual = robot.addChild("Visual")
         visual.addObject("MeshTopology", src=modelling.BodySurface.MeshTopology.linkpath)
-        visual.addObject("OglModel", src=visual.MeshTopology.linkpath, color=[0.5, 0.5, 0.5, 0.9])
+        visual.addObject("OglModel", src=visual.MeshTopology.linkpath, color=[1., 1., 1., 1.])
         visual.addObject("BarycentricMapping")
 
     cavity = robot.addChild("BodyCavity")
@@ -66,9 +67,7 @@ def addRobot(simulation, modelling, meshGeneration=True):
 def createScene(rootnode):
     from header import addHeader, addSolvers
     from scene import addRobot
-    from splib3.animation import AnimationManager, animate
 
-    rootnode.addObject(AnimationManager(rootnode))
     settings, modelling, simulation = addHeader(rootnode)
 
     settings.addObject("RequiredPlugin", name="CGALPlugin")
@@ -82,7 +81,7 @@ def createScene(rootnode):
     settings.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.Spring')  # Needed to use components [MeshSpringForceField]
     settings.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')  # Needed to use components [EdgeSetTopologyContainer]
 
-    rootnode.VisualStyle.displayFlags=["showVisual", "showBehavior"]
+    rootnode.VisualStyle.displayFlags=["showVisual", "hideBehavior"]
     rootnode.gravity.value = [0, 0, -9810]
     # rootnode.addObject("ClipPlane", position=[0, 0, 0], normal=[0, 1, 0])
 
@@ -107,14 +106,9 @@ def createScene(rootnode):
     addSolvers(simulation)
     robot = addRobot(simulation, modelling, meshGeneration=False)
     robot.addObject("BoxROI", box=[-100, 0, -100, 100, 400, -60])
-    robot.addObject("FixedProjectiveConstraint", indices=robot.BoxROI.indices.linkpath, drawSize=2)
+    robot.addObject("FixedProjectiveConstraint", indices=robot.BoxROI.indices.linkpath, drawSize=0)
 
-    def pressureAnimation(target, factor, pressure, startTime):
-        from math import sin, pi
-        if factor > 0:
-            target.value.value = [sin(2 * pi * factor) * pressure]
-
-    animate(pressureAnimation, {'target': robot.BodyCavity.SurfacePressureConstraint, 'pressure':0.5, 'startTime':0}, duration=2, mode="loop")
-    animate(pressureAnimation, {'target': robot.HeadCavity1.SurfacePressureConstraint, 'pressure':4., 'startTime':0}, duration=2, mode="loop", terminationDelay=6)
-    animate(pressureAnimation, {'target': robot.HeadCavity2.SurfacePressureConstraint, 'pressure':4., 'startTime':2}, duration=2, mode="loop", terminationDelay=6)
-    animate(pressureAnimation, {'target': robot.HeadCavity3.SurfacePressureConstraint, 'pressure':4., 'startTime':4}, duration=2, mode="loop", terminationDelay=6)
+    MyGui.MyRobotWindow.addSetting("Body", robot.BodyCavity.SurfacePressureConstraint.value, 0, 1)
+    MyGui.MyRobotWindow.addSetting("Head up", robot.HeadCavity1.SurfacePressureConstraint.value, 0, 8)
+    MyGui.MyRobotWindow.addSetting("Head left", robot.HeadCavity2.SurfacePressureConstraint.value, 0, 8)
+    MyGui.MyRobotWindow.addSetting("Head right", robot.HeadCavity3.SurfacePressureConstraint.value, 0, 8)
