@@ -10,8 +10,22 @@ def addRobot(simulation, modelling, meshGeneration=True):
     robot.addObject("MeshTopology", src=modelling.BodyVolume.topology.linkpath)
 
     robot.addObject("MechanicalObject")
-    robot.addObject("ParallelTetrahedronFEMForceField", youngModulus=280, poissonRatio=0.49)
-    robot.addObject("UniformMass", totalMass=1.5)
+    # Young's modulus is 
+    #  - 69 kPa for silicone ecoflex 30
+    #  - 55 kPa for silicone ecoflex 10
+    #  - 590 kPa for silicone dragon skin 30
+    #  - 150 kPa for silicone dragon skin 10
+    # kPa -> kg/(mm.s^2)
+    robot.addObject("ParallelTetrahedronFEMForceField", youngModulus=590, poissonRatio=0.49)
+
+
+    volume = robot.addChild("Volume")
+    volume.addObject("VolumeFromTetrahedrons", src=modelling.BodyVolume.MeshTopology.linkpath)
+    # density is 1e-6 kg/mm^3 for all silicones  
+    # volume is 2.7e6 mm^3
+    # mass is 2.7 kg
+
+    robot.addObject("UniformMass", totalMass=2.7)
 
     if not params.COARSE:
         visual = robot.addChild("Visual")
@@ -54,6 +68,7 @@ def addRobot(simulation, modelling, meshGeneration=True):
                          rotation=params.rotation if not meshGeneration else [0, 0, 0],
                          translation=params.translation[i] if not meshGeneration else [0, 0, 0],
                          scale3d=params.scale if not meshGeneration else [1, 1, 1])
+        # 0.3 bar -> 30 kPa -> 30 kg/(mm.s^2)
         cavity.addObject("SurfacePressureConstraint", value=0, valueType="pressure")
         cavity.addObject("BarycentricMapping")
 
@@ -81,9 +96,9 @@ def createScene(rootnode):
     settings.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.Spring')  # Needed to use components [MeshSpringForceField]
     settings.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')  # Needed to use components [EdgeSetTopologyContainer]
 
-    rootnode.VisualStyle.displayFlags=["showVisual", "hideBehavior"]
+    rootnode.VisualStyle.displayFlags=["showVisual", "showBehavior", "showWireFrame"]
     rootnode.gravity.value = [0, 0, -9810]
-    # rootnode.addObject("ClipPlane", position=[0, 0, 0], normal=[0, 1, 0])
+    #rootnode.addObject("ClipPlane", position=[0, 0, 0], normal=[0, 1, 0])
 
     bodysurface = modelling.addChild("BodySurface")
     bodysurface.addObject("MeshSTLLoader", filename="mesh/body.stl")
@@ -108,7 +123,8 @@ def createScene(rootnode):
     robot.addObject("BoxROI", box=[-100, 0, -100, 100, 400, -60])
     robot.addObject("FixedProjectiveConstraint", indices=robot.BoxROI.indices.linkpath, drawSize=0)
 
-    MyGui.MyRobotWindow.addSetting("Body", robot.BodyCavity.SurfacePressureConstraint.value, 0, 1)
-    MyGui.MyRobotWindow.addSetting("Head up", robot.HeadCavity1.SurfacePressureConstraint.value, 0, 8)
-    MyGui.MyRobotWindow.addSetting("Head left", robot.HeadCavity2.SurfacePressureConstraint.value, 0, 8)
-    MyGui.MyRobotWindow.addSetting("Head right", robot.HeadCavity3.SurfacePressureConstraint.value, 0, 8)
+    group = "Pressure (kPa)"
+    MyGui.MyRobotWindow.addSettingInGroup("Body", robot.BodyCavity.SurfacePressureConstraint.value, 0, 1, group)
+    MyGui.MyRobotWindow.addSettingInGroup("Head down", robot.HeadCavity1.SurfacePressureConstraint.value, 0, 8, group)
+    MyGui.MyRobotWindow.addSettingInGroup("Head left", robot.HeadCavity2.SurfacePressureConstraint.value, 0, 8, group)
+    MyGui.MyRobotWindow.addSettingInGroup("Head right", robot.HeadCavity3.SurfacePressureConstraint.value, 0, 8, group)
