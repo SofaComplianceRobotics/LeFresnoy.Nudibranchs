@@ -33,6 +33,12 @@ def addRobot(simulation, modelling, meshGeneration=True):
         visual.addObject("OglModel", src=visual.MeshTopology.linkpath, color=[1., 1., 1., 1.])
         visual.addObject("BarycentricMapping")
 
+    # Sphere:
+    # rest volume: 505201.749 mm3
+    # volume growth: 167003.831 mm3
+    # Accordion:
+    # rest volume: 87144.807 mm3
+    # volume growth: 23532.724 mm3
     cavity = robot.addChild("BodyCavity")
     cavity.addObject("MeshTopology", src=modelling.BodyCavity.MeshTopology.linkpath)
     cavity.addObject("MechanicalObject")
@@ -62,6 +68,8 @@ def addRobot(simulation, modelling, meshGeneration=True):
             ring.addObject('BarycentricMapping')
 
     for i in range(3):
+        # rest volume: 14071.429 mm3
+        # volume growth: 4129.607 mm3
         cavity = robot.addChild("HeadCavity" + str(i + 1))
         cavity.addObject("MeshTopology", src=modelling.getChild("HeadCavity" + str(i + 1)).MeshTopology.linkpath)
         cavity.addObject("MechanicalObject",
@@ -105,7 +113,8 @@ def createScene(rootnode):
     bodysurface.addObject("MeshTopology", src=bodysurface.MeshSTLLoader.linkpath)
 
     bodycavity = modelling.addChild("BodyCavity")
-    bodycavity.addObject("MeshSTLLoader", filename="mesh/bodycavity.stl")
+    bodycavityMesh = "mesh/bodycavity_sphere.stl" if params.cavity == "sphere" else "mesh/bodycavity_accordion.stl"
+    bodycavity.addObject("MeshSTLLoader", filename=bodycavityMesh)
     bodycavity.addObject("MeshTopology", src=bodycavity.MeshSTLLoader.linkpath)
 
     for i in range(3):
@@ -115,7 +124,8 @@ def createScene(rootnode):
 
     bodyvolume = modelling.addChild("BodyVolume")
 
-    bodyvolume.addObject("MeshVTKLoader", filename="mesh/body0_coarse.vtu" if params.COARSE else "mesh/body0_fine.vtu")
+    typeName = "coarse" if params.COARSE else "fine"
+    bodyvolume.addObject("MeshVTKLoader", filename="mesh/body_"+params.cavity+"_"+typeName+"0.vtu")
     bodyvolume.addObject("MeshTopology", src=bodyvolume.MeshVTKLoader.linkpath)
 
     addSolvers(simulation)

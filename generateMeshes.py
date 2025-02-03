@@ -9,7 +9,8 @@ def generateMeshes(modelling):
 
     # We load the meshes, the body surface and cavities wall
     meshbody = modelling.addObject("MeshSTLLoader", name="meshbody", filename="mesh/body.stl")
-    meshbodycavity = modelling.addObject("MeshSTLLoader", name="meshbodycavity", filename="mesh/bodycavity.stl")
+    bodycavityMesh = "mesh/bodycavity_sphere.stl" if params.cavity == "sphere" else "mesh/bodycavity_accordion.stl"
+    meshbodycavity = modelling.addObject("MeshSTLLoader", name="meshbodycavity", filename=bodycavityMesh)
     meshheadcavity1 = modelling.addObject("MeshSTLLoader", name="meshheadcavity1", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[0])
     meshheadcavity2 = modelling.addObject("MeshSTLLoader", name="meshheadcavity2", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[1])
     meshheadcavity3 = modelling.addObject("MeshSTLLoader", name="meshheadcavity3", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[2])
@@ -69,7 +70,8 @@ def generateMeshes(modelling):
                          tetrahedra="@MeshGenerationFromPolyhedron.outputTetras")
 
     # We export the generated mesh
-    bodyvolume.addObject("VTKExporter", filename="mesh/body",
+    typeName = "coarse" if params.COARSE else "fine"
+    bodyvolume.addObject("VTKExporter", filename="mesh/body_"+params.cavity+"_"+typeName,
                          position=bodyvolume.topology.position.linkpath,
                          edges=False, tetras=True, hexas=True,
                          exportAtEnd=True)
