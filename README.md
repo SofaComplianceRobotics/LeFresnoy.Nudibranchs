@@ -25,3 +25,9 @@ From _github.com/SofaDefrost_:
  
 Once you have downloaded everything, you can follow the instructions detailed [here](https://www.sofa-framework.org/download) to build SOFA with the plugins.
 
+## How to
+
+To run the simulation, open a terminal in the folder `LeFresnoy.Nudibranchs` and run the following command:
+```console
+PATH_TO_SOFA_BUILD_DIRECTORY/bin/runSofa -l SofaPython3,SofaImGui -g imgui scene.py
+```
