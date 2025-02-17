@@ -41,7 +41,10 @@ def addRobot(simulation, modelling, meshGeneration=True):
     # volume growth: 23532.724 mm3
     cavity = robot.addChild("BodyCavity")
     cavity.addObject("MeshTopology", src=modelling.BodyCavity.MeshTopology.linkpath)
-    cavity.addObject("MechanicalObject")
+    cavity.addObject("MechanicalObject",
+                    rotation=params.bc_rotation if not meshGeneration else [0, 0, 0],
+                    translation=params.bc_translation if not meshGeneration else [0, 0, 0],
+                    scale3d=params.bc_scale if not meshGeneration else [1, 1, 1])
     cavity.addObject("SurfacePressureConstraint", value=0, valueType="pressure")
     cavity.addObject("BarycentricMapping")
 
@@ -60,9 +63,9 @@ def addRobot(simulation, modelling, meshGeneration=True):
                            position=positions,
                            edges=[[l, l + 1] for l in range(nbSections)])
             ring.addObject('MechanicalObject',
-                           rotation=params.rotation,
-                           translation=params.translation[i],
-                           scale3d=params.scale)
+                           rotation=params.nc_rotation,
+                           translation=params.nc_translation[i],
+                           scale3d=params.nc_scale)
             ring.addObject('UniformMass', totalMass=1e-6)
             ring.addObject('MeshSpringForceField', stiffness=1.5e5, damping=0)
             ring.addObject('BarycentricMapping')
@@ -73,9 +76,9 @@ def addRobot(simulation, modelling, meshGeneration=True):
         cavity = robot.addChild("HeadCavity" + str(i + 1))
         cavity.addObject("MeshTopology", src=modelling.getChild("HeadCavity" + str(i + 1)).MeshTopology.linkpath)
         cavity.addObject("MechanicalObject",
-                         rotation=params.rotation if not meshGeneration else [0, 0, 0],
-                         translation=params.translation[i] if not meshGeneration else [0, 0, 0],
-                         scale3d=params.scale if not meshGeneration else [1, 1, 1])
+                         rotation=params.nc_rotation if not meshGeneration else [0, 0, 0],
+                         translation=params.nc_translation[i] if not meshGeneration else [0, 0, 0],
+                         scale3d=params.nc_scale if not meshGeneration else [1, 1, 1])
         # 0.3 bar -> 30 kPa -> 30 kg/(mm.s^2)
         cavity.addObject("SurfacePressureConstraint", value=0, valueType="pressure")
         cavity.addObject("BarycentricMapping")
@@ -104,7 +107,7 @@ def createScene(rootnode):
     settings.addObject('RequiredPlugin', name='Sofa.Component.SolidMechanics.Spring')  # Needed to use components [MeshSpringForceField]
     settings.addObject('RequiredPlugin', name='Sofa.Component.Topology.Container.Dynamic')  # Needed to use components [EdgeSetTopologyContainer]
 
-    rootnode.VisualStyle.displayFlags=["showVisual", "showBehavior", "showWireFrame"]
+    rootnode.VisualStyle.displayFlags=["showVisual", "hideBehavior", "hideWireFrame"]
     rootnode.gravity.value = [0, 0, -9810]
     #rootnode.addObject("ClipPlane", position=[0, 0, 0], normal=[0, 1, 0])
 
@@ -113,7 +116,7 @@ def createScene(rootnode):
     bodysurface.addObject("MeshTopology", src=bodysurface.MeshSTLLoader.linkpath)
 
     bodycavity = modelling.addChild("BodyCavity")
-    bodycavityMesh = "mesh/bodycavity_sphere.stl" if params.cavity == "sphere" else "mesh/bodycavity_accordion.stl"
+    bodycavityMesh = "mesh/bodycavity_sphere.stl" if params.bc_cavity == "sphere" else "mesh/bodycavity_accordion.stl"
     bodycavity.addObject("MeshSTLLoader", filename=bodycavityMesh)
     bodycavity.addObject("MeshTopology", src=bodycavity.MeshSTLLoader.linkpath)
 
@@ -125,7 +128,7 @@ def createScene(rootnode):
     bodyvolume = modelling.addChild("BodyVolume")
 
     typeName = "coarse" if params.COARSE else "fine"
-    bodyvolume.addObject("MeshVTKLoader", filename="mesh/body_"+params.cavity+"_"+typeName+"0.vtu")
+    bodyvolume.addObject("MeshVTKLoader", filename="mesh/body_"+params.bc_cavity+"_"+typeName+"0.vtu")
     bodyvolume.addObject("MeshTopology", src=bodyvolume.MeshVTKLoader.linkpath)
 
     addSolvers(simulation)

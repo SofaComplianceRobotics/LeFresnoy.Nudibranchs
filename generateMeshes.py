@@ -9,11 +9,11 @@ def generateMeshes(modelling):
 
     # We load the meshes, the body surface and cavities wall
     meshbody = modelling.addObject("MeshSTLLoader", name="meshbody", filename="mesh/body.stl")
-    bodycavityMesh = "mesh/bodycavity_sphere.stl" if params.cavity == "sphere" else "mesh/bodycavity_accordion.stl"
-    meshbodycavity = modelling.addObject("MeshSTLLoader", name="meshbodycavity", filename=bodycavityMesh)
-    meshheadcavity1 = modelling.addObject("MeshSTLLoader", name="meshheadcavity1", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[0])
-    meshheadcavity2 = modelling.addObject("MeshSTLLoader", name="meshheadcavity2", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[1])
-    meshheadcavity3 = modelling.addObject("MeshSTLLoader", name="meshheadcavity3", filename="mesh/headcavity.stl", rotation=params.rotation, scale3d=params.scale, translation=params.translation[2])
+    bodycavityMesh = "mesh/bodycavity_sphere.stl" if params.bc_cavity == "sphere" else "mesh/bodycavity_accordion.stl"
+    meshbodycavity = modelling.addObject("MeshSTLLoader", name="meshbodycavity", filename=bodycavityMesh, rotation=params.bc_rotation, scale3d=params.bc_scale, translation=params.bc_translation)
+    meshheadcavity1 = modelling.addObject("MeshSTLLoader", name="meshheadcavity1", filename="mesh/headcavity.stl", rotation=params.nc_rotation, scale3d=params.nc_scale, translation=params.nc_translation[0])
+    meshheadcavity2 = modelling.addObject("MeshSTLLoader", name="meshheadcavity2", filename="mesh/headcavity.stl", rotation=params.nc_rotation, scale3d=params.nc_scale, translation=params.nc_translation[1])
+    meshheadcavity3 = modelling.addObject("MeshSTLLoader", name="meshheadcavity3", filename="mesh/headcavity.stl", rotation=params.nc_rotation, scale3d=params.nc_scale, translation=params.nc_translation[2])
 
     # We create a node for each part
     bodysurface = modelling.addChild("BodySurface")
@@ -71,7 +71,7 @@ def generateMeshes(modelling):
 
     # We export the generated mesh
     typeName = "coarse" if params.COARSE else "fine"
-    bodyvolume.addObject("VTKExporter", filename="mesh/body_"+params.cavity+"_"+typeName,
+    bodyvolume.addObject("VTKExporter", filename="mesh/body_"+params.bc_cavity+"_"+typeName,
                          position=bodyvolume.topology.position.linkpath,
                          edges=False, tetras=True, hexas=True,
                          exportAtEnd=True)
