@@ -1,4 +1,4 @@
-# Nudibranchs - Patricia Alessandrini - Le Fresnoy Production
+# Nudibranchs - Patricia Alessandrini - Une Production Le Fresnoy
 ![](image/logo-fresnoy-noir_fond-transparent.png)
 
 ![](image/nudibranch.jpg)
